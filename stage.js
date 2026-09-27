@@ -188,6 +188,7 @@
       ws.onclose = (event) => {
         clearInterval(alive);
         if (event.code === 4401) return idle("Device token rejected");
+        if (event.code === 4409) return idle("Another page took over this screen name");
         idle("Reconnecting…");
         setTimeout(connect, delay);
         delay = Math.min(delay * 2, 30000);
