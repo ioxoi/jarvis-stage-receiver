@@ -245,3 +245,7 @@ body {
   transition: left 2s ease, top 2s ease;
 }
 @media (prefers-reduced-motion: reduce) { .stage { transition: none; } }
+
+/* Camera on the screen: one full-screen photo per second, letterboxed on black. */
+#stage[data-mode="camera"] { padding: 0; background: #000; }
+.camera-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }

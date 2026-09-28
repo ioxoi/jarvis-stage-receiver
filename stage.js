@@ -163,6 +163,7 @@
   };
 
   function render() {
+    delete stageEl.dataset.mode;   // a deck/goto ends camera mode
     if (!deck || !deck.slides || !deck.slides.length) return idle("Waiting for a presentation");
     index = Math.max(0, Math.min(index, deck.slides.length - 1));
     const slide = deck.slides[index];
@@ -177,6 +178,16 @@
     stageEl.replaceChildren(section);
   }
 
+  function showCamera(b64) {
+    if (typeof b64 !== "string" || !b64) return;
+    const img = document.createElement("img");
+    img.className = "camera-frame";
+    img.alt = "Camera";
+    img.src = "data:image/jpeg;base64," + b64;
+    stageEl.replaceChildren(img);
+    stageEl.dataset.mode = "camera";
+  }
+
   function handle(message, reply) {
     if (!message || typeof message !== "object") return;
     if (message.type !== "working") burnin.activity();   // a task count changing is not someone using the screen
@@ -184,6 +195,7 @@
     else if (message.type === "deck") { deck = message.deck; index = message.index || 0; render(); }
     else if (message.type === "goto") { index = message.index; render(); }
     else if (message.type === "close") return "close";
+    else if (message.type === "image") showCamera(message.data);
     else if (message.type === "working") stageEl.dataset.working = message.count > 0 ? "true" : "false";
     else if (message.type === "welcome") idle("Screen “" + message.screen + "” is ready");
   }
