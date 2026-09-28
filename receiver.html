@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; img-src https: data:; connect-src 'self' https://www.gstatic.com wss: https:">
   <title>Jarvis Stage</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -10,6 +11,7 @@
 </head>
 <body data-mode="cast" data-theme="dark">
   <main id="stage" class="stage"></main>
+  <script src="burnin.js"></script>
   <script src="stage.js"></script>
 </body>
 </html>
