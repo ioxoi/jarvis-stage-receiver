@@ -86,7 +86,8 @@
       const yAt = (v) => P.t + (H - P.t - P.b) * (1 - (v - min) / (max - min || 1));
       const chart = svg("svg", { viewBox: `0 0 ${W} ${H}`, class: "chart", role: "img", "aria-label": "chart" });
       chart.setAttribute("preserveAspectRatio", "xMinYMid meet");
-      for (let v = min; v <= max + stepY / 1000; v += stepY) {
+      // At most a dozen ticks whatever the values: an overflowed bound must never spin the display forever.
+      for (let i = 0, v = min; i < 12 && Number.isFinite(v) && v <= max + stepY / 1000; i++, v = min + i * stepY) {
         const y = yAt(v);
         chart.append(svg("line", { x1: P.l, x2: W - P.r, y1: y, y2: y, class: "grid" }));
         const label = svg("text", { x: P.l - 10, y: y + 5, class: "axis", "text-anchor": "end" });
@@ -213,22 +214,36 @@
     idle("Connecting…");
   }
 
+  // Phones on a dock would otherwise sleep, drop the socket and pause the presentation.
+  let wakeLock = null;
+  async function keepAwake() {
+    if (wakeLock || !("wakeLock" in navigator) || document.visibilityState !== "visible") return;
+    try {
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    } catch { /* not allowed here (no user gesture, battery saver): the page still works */ }
+  }
+  document.addEventListener("visibilitychange", keepAwake);
+
   function startBrowser() {
     const params = new URLSearchParams(location.search);
+    const app = window.JarvisApp;   // the Android app's stage view: it hands out one-time tickets
     let token = "", screen = params.get("screen") || "";
     try {
-      token = localStorage.getItem("jarvis.token") || "";
+      token = app ? "" : localStorage.getItem("jarvis.token") || "";
       screen = screen || localStorage.getItem("jarvis.screen") || "browser";
       localStorage.setItem("jarvis.screen", screen);
     } catch { screen = screen || "browser"; }
-    if (!token) return idle("Open the Jarvis voice page once and enter the device token");
+    if (!token && !app) return idle("Open the Jarvis voice page once and enter the device token");
+    keepAwake();
     let delay = 1000;
     const connect = () => {
       const ws = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/stage/ws");
       let alive;
       ws.onopen = () => {
         delay = 1000;
-        ws.send(JSON.stringify({ type: "hello", token, screen }));
+        const hello = app ? { type: "hello", ticket: app.ticket(), screen } : { type: "hello", token, screen };
+        ws.send(JSON.stringify(hello));
         alive = setInterval(() => ws.readyState === 1 && ws.send("ping"), 20000);
       };
       ws.onmessage = (event) => {
